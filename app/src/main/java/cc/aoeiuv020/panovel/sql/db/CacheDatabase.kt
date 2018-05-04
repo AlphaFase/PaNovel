@@ -7,17 +7,15 @@ import android.arch.persistence.room.TypeConverters
 import android.content.Context
 import cc.aoeiuv020.panovel.sql.dao.ChapterDao
 import cc.aoeiuv020.panovel.sql.dao.NovelDetailDao
-import cc.aoeiuv020.panovel.sql.entity.Chapter
-import cc.aoeiuv020.panovel.sql.entity.Content
-import cc.aoeiuv020.panovel.sql.entity.NovelDetail
-import cc.aoeiuv020.panovel.sql.entity.Volume
+import cc.aoeiuv020.panovel.sql.dao.NovelStatusDao
+import cc.aoeiuv020.panovel.sql.entity.*
 import java.io.File
 
 /**
  * Created by AoEiuV020 on 2018.04.25-21:50:22.
  */
 @Database(
-        entities = [NovelDetail::class, Chapter::class, Volume::class, Content::class],
+        entities = [NovelDetail::class, NovelStatus::class, Chapter::class, Volume::class, Content::class],
         version = 1
 )
 @TypeConverters(value = [Converters::class])
@@ -38,4 +36,5 @@ abstract class CacheDatabase : RoomDatabase() {
 
     abstract fun novelDetailDao(): NovelDetailDao
     abstract fun chapterDao(): ChapterDao
+    abstract fun novelStatusDao(): NovelStatusDao
 }

@@ -127,7 +127,8 @@ class CacheDatabaseTest {
         if (db.chapterDao().getCount() > 100 * 4000) {
             return@runInTransaction
         }
-        // 78802ms,
+        // 78802ms, 234745ms,
+        // RedMi3, 641000ms,
         repeat(1000) {
             SqlTestUtil.createNovelDetail().let {
                 db.novelDetailDao().insertNovel(it).let { id ->
@@ -139,17 +140,33 @@ class CacheDatabaseTest {
         }
     }
 
-    @Test
-    fun b2_update_chapters() = db.runInTransaction {
-        // 327ms,
-        // RedMi3, 2100ms,
+    private fun insert_1w_chapters(id: Long) = Thread {
         val novelDetail = SqlTestUtil.createNovelDetail().copy(
-                detailRequesterExtra = "detail-requester-extra-512"
+                detailRequesterExtra = "detail-requester-extra-$id"
         ).let {
             cache.queryByDetailRequester(it)
         }!!
         val chapters = SqlTestUtil.createChapters(novelDetail.id!!, 10000)
         cache.putChapters(novelDetail, chapters)
+    }.also {
+        it.start()
+    }
+
+    @Test
+    fun b2_update_chapters() {
+        // 327ms,
+        // RedMi3, 2100ms，4次6704ms, 4线程6477ms，
+        // 多线程没用，大概是锁了整个表，
+        // 1w行体积大概1m，手机写入速度大概4m，不怎样啊，
+        // 凑合用吧，
+        val threads = mutableListOf<Thread>()
+        insert_1w_chapters(333).also { threads.add(it) }
+        insert_1w_chapters(444).also { threads.add(it) }
+        insert_1w_chapters(555).also { threads.add(it) }
+        insert_1w_chapters(666).also { threads.add(it) }
+        threads.forEach {
+            it.join()
+        }
     }
 
     @Test

@@ -12,7 +12,6 @@ import cc.aoeiuv020.panovel.R
 import cc.aoeiuv020.panovel.api.NovelItem
 import cc.aoeiuv020.panovel.base.item.BaseItemListView
 import cc.aoeiuv020.panovel.base.item.DefaultItemListAdapter
-import cc.aoeiuv020.panovel.local.NovelHistory
 import cc.aoeiuv020.panovel.local.Settings
 import cc.aoeiuv020.panovel.util.getStringExtra
 import cc.aoeiuv020.panovel.util.show
@@ -149,7 +148,7 @@ class FuzzySearchActivity : AppCompatActivity(), BaseItemListView, AnkoLogger {
     }
 
     fun addNovel(item: NovelItem) {
-        mAdapter.add(NovelHistory(item))
+        mAdapter.add(item)
     }
 
     fun showOnComplete() {

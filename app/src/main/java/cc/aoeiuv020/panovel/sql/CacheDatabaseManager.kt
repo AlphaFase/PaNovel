@@ -2,10 +2,11 @@ package cc.aoeiuv020.panovel.sql
 
 import android.content.Context
 import android.support.annotation.VisibleForTesting
+import cc.aoeiuv020.panovel.api.DetailRequester
 import cc.aoeiuv020.panovel.sql.db.CacheDatabase
 import cc.aoeiuv020.panovel.sql.entity.Chapter
 import cc.aoeiuv020.panovel.sql.entity.NovelDetail
-import cc.aoeiuv020.panovel.sql.entity.NovelMini
+import cc.aoeiuv020.panovel.sql.entity.NovelStatus
 
 /**
  * 封装一个数据库多个表多个DAO的联用，
@@ -24,23 +25,41 @@ class CacheDatabaseManager(context: Context) {
         db.chapterDao().insertChapters(chapters)
     }
 
-    fun getChapters(novelDetail: NovelDetail): List<Chapter> = db.runInTransaction<List<Chapter>> {
+    fun getChapters(novelDetail: NovelDetail): List<Chapter> {
         val id = requireNotNull(novelDetail.id) {
             "require novelDetail.id was null,"
         }
-        db.chapterDao().queryChaptersByNovelDetailId(id)
+        return db.chapterDao().queryChaptersByNovelDetailId(id)
     }
 
-    fun queryByDetailRequester(novelMini: NovelMini): NovelDetail? = db.runInTransaction<NovelDetail?> {
-        val type = novelMini.detailRequesterType
-        val extra = novelMini.detailRequesterExtra
-        db.novelDetailDao().queryByDetailRequester(type, extra)
-    }
-
-    fun queryByDetailRequester(novelDetail: NovelDetail): NovelDetail? = db.runInTransaction<NovelDetail?> {
+    fun queryByDetailRequester(novelDetail: NovelDetail): NovelDetail? {
         val type = novelDetail.detailRequesterType
         val extra = novelDetail.detailRequesterExtra
-        db.novelDetailDao().queryByDetailRequester(type, extra)
+        return queryByDetailRequester(type, extra)
     }
 
+    fun queryByDetailRequester(detailRequester: DetailRequester): NovelDetail? {
+        return queryByDetailRequester(detailRequester.type, detailRequester.extra)
+    }
+
+    fun queryByDetailRequester(type: String, extra: String): NovelDetail? {
+        return db.novelDetailDao().queryByDetailRequester(type, extra)
+    }
+
+    fun putNovelDetail(novelDetail: NovelDetail) {
+        // TODO: 测试下更新时会不会跟着删除章节什么的，
+        db.novelDetailDao().insertOrUpdate(novelDetail)
+    }
+
+    fun queryStatusByDetailRequester(detailRequester: DetailRequester): NovelStatus? {
+        return queryStatusByDetailRequester(detailRequester.type, detailRequester.extra)
+    }
+
+    fun queryStatusByDetailRequester(type: String, extra: String): NovelStatus? {
+        return db.novelStatusDao().queryStatusByDetailRequester(type, extra)
+    }
+
+    fun queryOrNewStatus(detailRequester: DetailRequester): NovelStatus {
+        return queryOrNewStatus(detailRequester)
+    }
 }

@@ -1,9 +1,6 @@
 package cc.aoeiuv020.panovel.sql.dao
 
-import android.arch.persistence.room.Dao
-import android.arch.persistence.room.Insert
-import android.arch.persistence.room.Query
-import android.arch.persistence.room.Update
+import android.arch.persistence.room.*
 import android.support.annotation.VisibleForTesting
 import cc.aoeiuv020.panovel.sql.entity.NovelDetail
 
@@ -35,4 +32,8 @@ abstract class NovelDetailDao {
 
     @Query("select count(*) from NovelDetail")
     abstract fun getCount(): Int
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract fun insertOrUpdate(novelDetails: NovelDetail): Long
+
 }

@@ -1,9 +1,8 @@
 package cc.aoeiuv020.panovel.base.item
 
 import cc.aoeiuv020.panovel.IView
-import cc.aoeiuv020.panovel.api.NovelChapter
 import cc.aoeiuv020.panovel.api.NovelDetail
-import java.util.*
+import cc.aoeiuv020.panovel.sql.entity.NovelStatus
 
 /**
  *
@@ -16,10 +15,8 @@ interface BaseItemListView : IView {
 interface SmallItemView : IView {
     fun showDetail(novelDetail: NovelDetail)
     fun showNewChapterDot()
-    fun showChapter(chapters: List<NovelChapter>, progress: Int)
+    fun showChapter(novelStatus: NovelStatus)
     fun hideProgressBar()
 }
 
-interface BigItemView : SmallItemView {
-    fun showUpdateTime(updateTime: Date?)
-}
+interface BigItemView : SmallItemView

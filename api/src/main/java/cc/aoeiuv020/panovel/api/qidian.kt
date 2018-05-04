@@ -363,7 +363,7 @@ class Qidian : NovelContext() {
             }
             val id = cachedId
             val urlMd5 = qidianMd5Hex(url)
-            val plain = "QDLite!@#$%|${System.currentTimeMillis()}|$deviceId|$id|1|1.0.0|1000147|$urlMd5"
+            val plain = "QDLite!@#$%^|${System.currentTimeMillis()}|$deviceId|$id|1|1.0.0|1000147|$urlMd5"
             val sign = URLEncoder.encode(qidianDes3(plain).replace(" ", ""), "ascii")
             return super.connect().cookie("QDSign", sign)
         }

@@ -1,5 +1,6 @@
 package cc.aoeiuv020.panovel.bookshelf
 
+import cc.aoeiuv020.panovel.api.NovelItem
 import cc.aoeiuv020.panovel.base.item.BaseItemListPresenter
 import cc.aoeiuv020.panovel.base.item.BigItemPresenter
 import cc.aoeiuv020.panovel.local.Bookshelf
@@ -50,8 +51,8 @@ class BookshelfItemPresenter(presenter: BaseItemListPresenter<*, BookshelfItemPr
     override val refreshTime: Long
         get() = maxOf(super.refreshTime, itemRefreshTime)
 
-    fun forceRefresh(novelHistory: NovelHistory) {
+    fun forceRefresh(novelItem: NovelItem) {
         itemRefreshTime = System.currentTimeMillis()
-        view?.setData(novelHistory)
+        view?.setData(novelItem)
     }
 }

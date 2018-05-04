@@ -10,6 +10,8 @@ import cc.aoeiuv020.panovel.local.Progress
 import cc.aoeiuv020.panovel.local.bookId
 import cc.aoeiuv020.panovel.local.toJson
 import cc.aoeiuv020.panovel.server.UpdateManager
+import cc.aoeiuv020.panovel.sql.DataManager
+import cc.aoeiuv020.panovel.sql.entity.NovelStatus
 import cc.aoeiuv020.panovel.util.async
 import cc.aoeiuv020.panovel.util.suffixThreadName
 import io.reactivex.Observable
@@ -51,9 +53,10 @@ abstract class SmallItemPresenter<T : SmallItemView>(protected val itemListPrese
         debug { "request detail $novelItem" }
         Observable.fromCallable {
             suffixThreadName("requestDetail")
-            Cache.detail.get(novelItem)
+            DataManager.getNovelDetailToApi(novelItem.requester)
                     ?: NovelContext.getNovelContextByUrl(novelItem.requester.url)
-                            .getNovelDetail(novelItem.requester).also { Cache.detail.put(it.novel, it) }
+                            .getNovelDetail(novelItem.requester)
+                            .also { DataManager.putNovelDetailFromApi(it) }
         }.async().subscribe({ novelDetail ->
             view?.showDetail(novelDetail)
         }, { e ->
@@ -64,14 +67,14 @@ abstract class SmallItemPresenter<T : SmallItemView>(protected val itemListPrese
     }
 
     fun requestChapters(detail: NovelDetail) {
-        Observable.create<Pair<List<NovelChapter>, Int>> { em ->
+        Observable.create<NovelStatus> { em ->
             // TODO: 这里真的非常糟糕了，
             // 还有其他地方有requestChapters，所以多加个后缀，
             suffixThreadName("requestChaptersItem")
             val novelItem = detail.novel
             val progress = Progress.load(novelItem).chapter
-            val cachedChapters = Cache.chapters.get(novelItem)?.also {
-                em.onNext(Pair(it, progress))
+            val cachedStatus = DataManager.getNovelStatus(novelItem.requester)?.also {
+                em.onNext(it)
             }
             var fromCache = true
             val novel = UpdateManager.query(novelItem.requester)
@@ -79,21 +82,23 @@ abstract class SmallItemPresenter<T : SmallItemView>(protected val itemListPrese
                 "向服务器查询结果 ${novel?.toJson()}"
             }
             // 只对比长度，时间可空真的很麻烦，
-            fun Pair<Date?, Int?>.newerThan(other: List<NovelChapter>): Boolean {
-                return (second ?: 0 > other.size)
+            fun Pair<Date?, Int?>.newerThan(other: NovelStatus): Boolean {
+                return (second ?: 0 > other.chaptersCount)
             }
 
             val refreshChapters = Cache.chapters.get(novelItem, refreshTime = refreshTime)
             // 如果服务器告知有更新，就刷新，否则这个留空，
             val chapters = if (refreshChapters == null ||
                     (novel != null
-                            && cachedChapters != null
-                            && novel.run { updateTime to chaptersCount }.newerThan(cachedChapters))) {
+                            && cachedStatus != null
+                            && novel.run { updateTime to chaptersCount }.newerThan(cachedStatus))) {
                 debug {
-                    "${novelItem.name} 要更新，${cachedChapters?.size} -> ${novel?.chaptersCount}"
+                    "${novelItem.name} 要更新，${cachedStatus?.chaptersCount} -> ${novel?.chaptersCount}"
                 }
                 NovelContext.getNovelContextByUrl(novelItem.requester.url).also { fromCache = false }
-                        .getNovelChaptersAsc(detail.requester).also { Cache.chapters.put(novelItem, it) }
+                        .getNovelChaptersAsc(detail.requester).also {
+                            DataManager.putChapters(detail.novel.requester, it)
+                        }
             } else {
                 null
             }
@@ -114,9 +119,9 @@ abstract class SmallItemPresenter<T : SmallItemView>(protected val itemListPrese
                 UpdateManager.touch(novelItem.requester, chapters.size, chapters.last().update)
             }
             em.onComplete()
-        }.async().subscribe({ (chapters, progress) ->
-            debug { "展示章节 ${chapters.last().name}, $progress" }
-            view?.showChapter(chapters, progress)
+        }.async().subscribe({ novelStatus ->
+            debug { "展示章节 $novelStatus" }
+            view?.showChapter(novelStatus)
         }, { e ->
             val message = "读取《${detail.novel.bookId}》章节失败，"
             error(message, e)
@@ -129,27 +134,4 @@ abstract class SmallItemPresenter<T : SmallItemView>(protected val itemListPrese
 }
 
 abstract class BigItemPresenter<T : BigItemView>(itemListPresenter: BaseItemListPresenter<*, *>) : SmallItemPresenter<T>(itemListPresenter) {
-
-    /**
-     * 另外有获取详情和章节，更新时间包含在内，
-     * 但是获取的详情是可以从缓存获取的，
-     * 目录里的章节是可能没有时间的，
-     * 如果章节里没有时间，就调用这个方法获取详情页里的时间，
-     */
-    fun requestUpdate(novelItem: NovelItem) {
-        Observable.fromCallable {
-            suffixThreadName("requestUpdate")
-            val detail = Cache.detail.get(novelItem, refreshTime = refreshTime)
-                    ?: NovelContext.getNovelContextByUrl(novelItem.requester.url)
-                            .getNovelDetail(novelItem.requester).also { Cache.detail.put(it.novel, it) }
-            detail.update
-        }.async().subscribe({ updateTime ->
-            view?.showUpdateTime(updateTime)
-        }, { e ->
-            val message = "读取《${novelItem.bookId}》详情失败，"
-            error(message, e)
-            itemListPresenter.view?.showError(message, e)
-        }).let { addDisposable(it, 2) }
-    }
-
 }

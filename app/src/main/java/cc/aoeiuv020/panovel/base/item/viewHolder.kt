@@ -4,15 +4,12 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.view.ViewGroup
 import android.widget.TextView
-import cc.aoeiuv020.panovel.R
-import cc.aoeiuv020.panovel.api.NovelChapter
 import cc.aoeiuv020.panovel.api.NovelDetail
 import cc.aoeiuv020.panovel.api.NovelItem
 import cc.aoeiuv020.panovel.detail.NovelDetailActivity
 import cc.aoeiuv020.panovel.local.Bookshelf
-import cc.aoeiuv020.panovel.local.NovelHistory
-import cc.aoeiuv020.panovel.local.Settings
 import cc.aoeiuv020.panovel.search.FuzzySearchActivity
+import cc.aoeiuv020.panovel.sql.entity.NovelStatus
 import cc.aoeiuv020.panovel.text.CheckableImageView
 import cc.aoeiuv020.panovel.text.NovelTextActivity
 import cn.lemon.view.adapter.BaseViewHolder
@@ -21,7 +18,6 @@ import kotlinx.android.synthetic.main.novel_item_big.view.*
 import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.debug
 import java.text.SimpleDateFormat
-import java.util.*
 
 /**
  *
@@ -30,7 +26,7 @@ import java.util.*
 abstract class SmallItemViewHolder<out T : SmallItemPresenter<*>>(protected val itemListPresenter: BaseItemListPresenter<*, T>,
                                                                   protected val ctx: Context, parent: ViewGroup?, layoutId: Int,
                                                                   listener: OnItemLongClickListener? = null)
-    : BaseViewHolder<NovelHistory>(parent, layoutId), SmallItemView, AnkoLogger {
+    : BaseViewHolder<NovelItem>(parent, layoutId), SmallItemView, AnkoLogger {
     @Suppress("UNCHECKED_CAST")
     protected val presenter: T = itemListPresenter.subPresenter()
     private val image = itemView.imageView
@@ -39,16 +35,10 @@ abstract class SmallItemViewHolder<out T : SmallItemPresenter<*>>(protected val 
     private val site = itemView.tvSite
     private val last = itemView.tvLast
     /**
-     * 缓存更新时间，用来判断小红点是否显示，
-     */
-    protected var updateTime: Date? = null
-    /**
      * 书架页没有这个star按钮，
      */
     private val star: CheckableImageView? = itemView.ivStar
-    protected lateinit var novelHistory: NovelHistory
-    protected val novelItem: NovelItem
-        get() = novelHistory.novel
+    protected lateinit var novelItem: NovelItem
 
     init {
         name.setOnClickListener {
@@ -93,14 +83,14 @@ abstract class SmallItemViewHolder<out T : SmallItemPresenter<*>>(protected val 
     override fun hideProgressBar() {
     }
 
-    override fun setData(data: NovelHistory) {
-        this.novelHistory = data
+    override fun setData(data: NovelItem) {
+        this.novelItem = data
         debug {
             "${this.hashCode()} $layoutPosition setData $data"
         }
         star?.isChecked = Bookshelf.contains(novelItem)
         @Suppress("UnnecessaryVariable")
-        val novel = data.novel
+        val novel = data
         name.text = novel.name
         author.text = novel.author
         site.text = novel.site
@@ -116,14 +106,12 @@ abstract class SmallItemViewHolder<out T : SmallItemPresenter<*>>(protected val 
     override fun showDetail(novelDetail: NovelDetail) {
         // 详情页的时间选择性无视，因为详情页是缓存的，
         // 目前没有获取到updateTime，比如章节还没获取，或者章节里没有更新时间，
-        updateTime = novelDetail.update
         Glide.with(ctx).load(novelDetail.bigImg).into(image)
         presenter.requestChapters(novelDetail)
     }
 
-    override fun showChapter(chapters: List<NovelChapter>, progress: Int) {
-        last.text = chapters.last().name
-        updateTime = chapters.last().update
+    override fun showChapter(novelStatus: NovelStatus) {
+        last.text = novelStatus.chapterNameLast
     }
 
     fun destroy() {
@@ -146,7 +134,7 @@ open class DefaultItemViewHolder<out T : BigItemPresenter<*>>(itemListPresenter:
     private val update: TextView? = itemView.tvUpdate
     private val readAt: TextView? = itemView.tvReadAt
 
-    override fun setData(data: NovelHistory) {
+    override fun setData(data: NovelItem) {
         super.setData(data)
 
         // 清空残留数据，避免闪烁，
@@ -154,32 +142,12 @@ open class DefaultItemViewHolder<out T : BigItemPresenter<*>>(itemListPresenter:
         readAt?.text = ""
     }
 
-    override fun showDetail(novelDetail: NovelDetail) {
-        super.showDetail(novelDetail)
-        if (updateTime != null) {
-            showUpdateTime(updateTime)
+    override fun showChapter(novelStatus: NovelStatus) {
+        super.showChapter(novelStatus)
+        if (update != null && novelStatus.updateTime != null) {
+            update.text = sdf.format(novelStatus.updateTime)
         }
-    }
-
-    override fun showUpdateTime(updateTime: Date?) {
-        updateTime?.let {
-            update?.text = sdf.format(updateTime)
-        } ?: run {
-            update?.text = ctx.getString(R.string.unknown)
-        }
-    }
-
-    override fun showChapter(chapters: List<NovelChapter>, progress: Int) {
-        super.showChapter(chapters, progress)
-        showUpdateTime(updateTime)
-        readAt?.text = chapters[progress].name
-        /*
-         逻辑，设置要提醒时间上的更新，或者是大视图需要展示时间，则需要时间，
-          */
-        val s = Settings.bookshelfRedDotNotifyNotReadOrNewChapter
-        if ((s || update != null) && updateTime == null) {
-            presenter.requestUpdate(novelItem)
-        }
+        readAt?.text = novelStatus.chapterNameReadAt
     }
 }
 

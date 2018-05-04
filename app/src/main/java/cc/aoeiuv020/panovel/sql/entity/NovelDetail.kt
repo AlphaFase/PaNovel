@@ -3,7 +3,6 @@ package cc.aoeiuv020.panovel.sql.entity
 import android.arch.persistence.room.Entity
 import android.arch.persistence.room.Index
 import android.arch.persistence.room.PrimaryKey
-import java.util.*
 
 /**
  * 缓存数据库中的小说详情表，
@@ -66,48 +65,6 @@ data class NovelDetail(
          * 章节列表请求者的参数，
          * [chaptersRequesterType], [chaptersRequesterExtra] 两个字段合起来表示章节列表请求者，能用来请求到小说的一切，
          */
-        val chaptersRequesterExtra: String,
-        /**
-         * 阅读进度，
-         * 阅读至的章节索引，
-         */
-        val chapterReadAt: Int = 0,
-        /**
-         * 章节内的阅读进度，
-         * 看到第几页或者第几个字，具体没决定，
-         */
-        val textReadAt: Int = 0,
-        /**
-         * 是否在书架上，
-         */
-        val bookshelf: Boolean = false,
-
-        // 下面的可空，
-
-        /**
-         * 最新章节名,
-         */
-        val chapterNameLast: String? = null,
-        /**
-         * 阅读进度章节名,
-         */
-        val chapterNameReadAt: String? = null,
-        /**
-         * 最新更新时间, 也就是最新一章更新的时间，
-         */
-        val updateTime: Date? = null,
-        /**
-         * 检查更新时间, 也就是这个时间之前的更新是已知的，
-         */
-        val checkUpdateTime: Date? = null,
-        /**
-         * 拿到上一个更新的时间, 也就是上次刷出更新的[checkUpdateTime],
-         * 用来对比阅读时间就知道是否是已读了，
-         */
-        val receiveUpdateTime: Date? = null,
-        /**
-         * 服务器端id,
-         */
-        val remoteId: Int? = null
+        val chaptersRequesterExtra: String
 )
 

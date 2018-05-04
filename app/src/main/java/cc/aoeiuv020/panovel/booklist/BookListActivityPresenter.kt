@@ -4,7 +4,6 @@ import cc.aoeiuv020.panovel.api.NovelItem
 import cc.aoeiuv020.panovel.base.item.DefaultItemListPresenter
 import cc.aoeiuv020.panovel.local.BookList
 import cc.aoeiuv020.panovel.local.BookListData
-import cc.aoeiuv020.panovel.local.NovelHistory
 import cc.aoeiuv020.panovel.util.async
 import cc.aoeiuv020.panovel.util.suffixThreadName
 import io.reactivex.Observable
@@ -16,7 +15,7 @@ import java.util.*
  * Created by AoEiuV020 on 2017.11.22-15:47:37.
  */
 class BookListActivityPresenter(private val bookListName: String) : DefaultItemListPresenter<BookListActivity>() {
-    private lateinit var list: MutableList<NovelHistory>
+    private lateinit var list: MutableList<NovelItem>
     private val bookListData: BookListData by lazy {
         BookList.get(bookListName)
                 ?: throw Exception("书单不存在")
@@ -25,7 +24,7 @@ class BookListActivityPresenter(private val bookListName: String) : DefaultItemL
     private fun requestHistory() {
         Observable.fromCallable {
             suffixThreadName("requestHistory")
-            list = ArrayList(bookListData.list.map { NovelHistory(it, Date(0)) })
+            list = ArrayList(bookListData.list)
             list
         }.async().subscribe({ list ->
             view?.showNovelList(list)
@@ -44,15 +43,14 @@ class BookListActivityPresenter(private val bookListName: String) : DefaultItemL
         view?.showNovelList(list)
     }
 
-    fun contains(novelItem: NovelItem)
-            = list.any { it.novel == novelItem }
+    fun contains(novelItem: NovelItem) = list.contains(novelItem)
 
     fun add(novelItem: NovelItem) {
-        list.add(NovelHistory(novelItem))
+        list.add(novelItem)
     }
 
     fun remove(novelItem: NovelItem) {
-        list.remove(NovelHistory(novelItem))
+        list.remove(novelItem)
     }
 
     fun remove(position: Int) {
@@ -63,7 +61,7 @@ class BookListActivityPresenter(private val bookListName: String) : DefaultItemL
         Observable.fromCallable {
             suffixThreadName("saveBookList")
             bookListData.list.clear()
-            bookListData.list.addAll(list.map { it.novel })
+            bookListData.list.addAll(list)
             BookList.put(bookListData)
             bookListData.list.size
         }.async().subscribe({ size ->

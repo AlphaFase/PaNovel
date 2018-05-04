@@ -114,7 +114,7 @@ class BookListActivity : AppCompatActivity(), BaseItemListView, AnkoLogger, OnIt
         presenter.forceRefresh()
     }
 
-    fun showNovelList(list: List<NovelHistory>) {
+    fun showNovelList(list: List<NovelItem>) {
         mAdapter.data = ArrayList(list)
         recyclerView.dismissSwipeRefresh()
         recyclerView.showNoMore()

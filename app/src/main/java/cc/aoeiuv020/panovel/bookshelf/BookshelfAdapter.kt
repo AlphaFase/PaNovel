@@ -4,11 +4,11 @@ import android.content.Context
 import android.view.ViewGroup
 import cc.aoeiuv020.panovel.R
 import cc.aoeiuv020.panovel.api.NovelChapter
+import cc.aoeiuv020.panovel.api.NovelItem
 import cc.aoeiuv020.panovel.base.item.BaseItemListAdapter
 import cc.aoeiuv020.panovel.base.item.DefaultItemViewHolder
 import cc.aoeiuv020.panovel.detail.NovelDetailActivity
 import cc.aoeiuv020.panovel.local.Bookshelf
-import cc.aoeiuv020.panovel.local.NovelHistory
 import cc.aoeiuv020.panovel.local.Settings
 import cc.aoeiuv020.panovel.local.Text
 import cc.aoeiuv020.panovel.search.FuzzySearchActivity
@@ -30,7 +30,7 @@ import java.util.*
 
 class BookshelfItemListAdapter(context: Context, val presenter: BookshelfPresenter)
     : BaseItemListAdapter(context) {
-    override fun onCreateBaseViewHolder(parent: ViewGroup?, viewType: Int): BaseViewHolder<NovelHistory>
+    override fun onCreateBaseViewHolder(parent: ViewGroup?, viewType: Int): BaseViewHolder<NovelItem>
             = if (Settings.BookSmallLayout) {
         BookshelfItemViewHolder(presenter, context, parent, R.layout.bookshelf_item_small)
     } else {
@@ -68,7 +68,7 @@ class BookshelfItemViewHolder(itemListPresenter: BookshelfPresenter, ctx: Contex
         newChapterDot.setColorFilter(Settings.bookshelfRedDotColor)
     }
 
-    override fun setData(data: NovelHistory) {
+    override fun setData(data: NovelItem) {
         super.setData(data)
         newChapterDot.hide()
         ivMoreAction.hide()
